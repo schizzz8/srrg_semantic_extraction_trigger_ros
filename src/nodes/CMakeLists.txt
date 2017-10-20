@@ -1,0 +1,6 @@
+add_executable(srrg_semantic_extraction_trigger_node_example srrg_semantic_extraction_trigger_node_example.cpp)
+
+target_link_libraries(srrg_semantic_extraction_trigger_node_example
+  srrg_semantic_extraction_trigger_ros_library
+  ${catkin_LIBRARIES}
+)
