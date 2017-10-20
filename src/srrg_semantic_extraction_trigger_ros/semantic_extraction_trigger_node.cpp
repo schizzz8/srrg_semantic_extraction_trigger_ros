@@ -109,7 +109,9 @@ void SemanticExtractionTriggerNode::depthImageCallback(const sensor_msgs::Image:
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
     }
-    _trigger->processClusters(_map_image);
+    _trigger->processClusters(_map_image,tfTransform2eigen(_robot_tf));
+
+    _depth_image_subscriber.shutdown();
     
 }
 
@@ -117,7 +119,8 @@ void SemanticExtractionTriggerNode::occupancyGridSubscriber(const nav_msgs::Occu
     int width = occupancy_grid_msg->info.width;
     int height = occupancy_grid_msg->info.height;
 
-    _map_image = cv::Mat(height, width, CV_8U);
+    cv::Mat temp_image = cv::Mat(height, width, CV_8U);
+
     _trigger->setMapResolution(occupancy_grid_msg->info.resolution);
     _trigger->setMapOrigin(Eigen::Vector3f(occupancy_grid_msg->info.origin.position.x,
                                            occupancy_grid_msg->info.origin.position.y,
@@ -130,17 +133,18 @@ void SemanticExtractionTriggerNode::occupancyGridSubscriber(const nav_msgs::Occu
             switch (occupancy_grid_msg->data[i_rev*width + j]) {
             default:
             case -1:
-                this->_map_image.data[i*width + j] = 150;
+                temp_image.data[i*width + j] = 150;
                 break;
             case 0:
-                this->_map_image.data[i*width + j] = 255;
+                temp_image.data[i*width + j] = 255;
                 break;
             case 100:
-                this->_map_image.data[i*width + j] = 0;
+                temp_image.data[i*width + j] = 0;
                 break;
             }
     ROS_INFO("Image extracted from occupancy grid.");
 
+    cv::cvtColor(temp_image,_map_image,CV_GRAY2RGB);
     _occupancy_grid_subscriber.shutdown();
     _got_map=true;
 }
