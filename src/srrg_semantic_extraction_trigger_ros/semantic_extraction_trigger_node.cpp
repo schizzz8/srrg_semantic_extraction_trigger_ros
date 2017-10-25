@@ -6,6 +6,7 @@ using namespace std;
 using namespace srrg_core;
 using namespace srrg_semantic_extraction_trigger;
 
+
 SemanticExtractionTriggerNode::SemanticExtractionTriggerNode(SemanticExtractionTrigger *trigger_){
     if(!trigger_)
         _trigger = new SemanticExtractionTrigger();
@@ -44,7 +45,7 @@ SemanticExtractionTriggerNode::SemanticExtractionTriggerNode(SemanticExtractionT
 
     _occupancy_grid_subscriber = _nh.subscribe(_occupancy_grid_topic,
                                                1000,
-                                               &SemanticExtractionTriggerNode::occupancyGridSubscriber,
+                                               &SemanticExtractionTriggerNode::occupancyGridCallback,
                                                this);
 
     _got_info = false;
@@ -91,16 +92,23 @@ void SemanticExtractionTriggerNode::depthImageCallback(const sensor_msgs::Image:
         return;
 
     cv_bridge::CvImageConstPtr depth_image;
-    
+
     try {
         depth_image =  cv_bridge::toCvShare(depth_image_msg);
     } catch (cv_bridge::Exception& e) {
         ROS_ERROR("Could not convert from '%s' to 'bgr8'.", depth_image_msg->encoding.c_str());
     }
 
-    _trigger->setDepthImage(depth_image->image);
+    cv::Mat temp_image;
+    depth_image->image.convertTo(temp_image,CV_16UC1,1000);
+
+    _trigger->setDepthImage(temp_image);
     _trigger->generateCloud();
+    //_trigger->cloudGenerator()->saveCloud();
+
     _trigger->analyzeStructure();
+    //_trigger->structureAnalyzer()->saveImage();
+
     _trigger->extractClusters();
 
     try {
@@ -111,11 +119,9 @@ void SemanticExtractionTriggerNode::depthImageCallback(const sensor_msgs::Image:
     }
     _trigger->processClusters(_map_image,tfTransform2eigen(_robot_tf));
 
-    _depth_image_subscriber.shutdown();
-    
 }
 
-void SemanticExtractionTriggerNode::occupancyGridSubscriber(const nav_msgs::OccupancyGrid::ConstPtr& occupancy_grid_msg){
+void SemanticExtractionTriggerNode::occupancyGridCallback(const nav_msgs::OccupancyGrid::ConstPtr& occupancy_grid_msg){
     int width = occupancy_grid_msg->info.width;
     int height = occupancy_grid_msg->info.height;
 

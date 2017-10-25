@@ -20,7 +20,7 @@ public:
 
     void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camera_info_msg);
     void depthImageCallback(const sensor_msgs::Image::ConstPtr& depth_image_msg);
-    void occupancyGridSubscriber(const nav_msgs::OccupancyGrid::ConstPtr& occupancy_grid_msg);
+    void occupancyGridCallback(const nav_msgs::OccupancyGrid::ConstPtr& occupancy_grid_msg);
 
 private:
     ros::NodeHandle _nh;
